@@ -1,0 +1,44 @@
+# Pokemon Rot - Python Edition
+# Requirements File
+
+# Core Python Standard Library (no installation needed)
+# tkinter - GUI Framework (included with Python)
+# random - Random number generation (included with Python)
+# time - Time utilities (included with Python)
+# sys - System functions (included with Python)
+# os - Operating system interface (included with Python)
+# traceback - Exception handling (included with Python)
+
+# Optional packages for enhanced experience
+# Uncomment and install if you want additional features:
+
+pillow>=8.0.0          # For image handling (future Pokemon sprites)
+pygame>=2.0.0          # For sound effects and music
+numpy>=1.21.0          # For advanced calculations
+matplotlib>=3.5.0      # For statistics graphs
+
+#Development dependencies (optional)
+black>=22.0.0          # Code formatting
+pylint>=2.12.0         # Code linting
+pytest>=6.2.0         # Testing framework
+
+# Installation instructions:
+# 1. Standard installation (recommended):
+#    No additional packages needed! Just run: python main.py
+#
+# 2. Enhanced features (optional):
+#    pip install pillow pygame numpy matplotlib
+#
+# 3. Development setup (for contributors):
+#    pip install -r requirements.txt --upgrade
+#    pip install black pylint pytest
+
+# Platform-specific notes:
+# Windows: tkinter included by default
+# macOS: May need: brew install tcl-tk
+# Linux: May need: sudo apt-get install python3-tk
+
+# Python version compatibility:
+# Minimum: Python 3.6+
+# Recommended: Python 3.8+
+# Tested: Python 3.8, 3.9, 3.10, 3.11
