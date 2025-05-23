@@ -1,4 +1,4 @@
-# trainer.py
+# trainer_class.py
 """
 Trainer Klasse für Spieler und NPCs
 """
@@ -64,13 +64,17 @@ class Trainer:
     def add_pokeballs(self, amount):
         """Fügt Pokebälle hinzu"""
         if self.is_player:
-            self.pokeballs = min(GAME_CONFIG["max_pokeballs"], 
-                               self.pokeballs + amount)
+            # Normale Pokebälle hinzufügen
+            new_amount = min(GAME_CONFIG["max_pokeballs"], 
+                           self.inventory.get("pokeball", 0) + amount)
+            self.inventory["pokeball"] = new_amount
+            self.pokeballs = self.get_total_pokeballs()  # Update für Kompatibilität
     
-    def use_pokeball(self):
-        """Verwendet einen Pokeball"""
-        if self.pokeballs > 0:
-            self.pokeballs -= 1
+    def use_pokeball(self, ball_type="pokeball"):
+        """Verwendet einen Pokeball eines bestimmten Typs"""
+        if self.inventory.get(ball_type, 0) > 0:
+            self.inventory[ball_type] -= 1
+            self.pokeballs = self.get_total_pokeballs()  # Update für Kompatibilität
             return True
         return False
     
@@ -104,67 +108,105 @@ class Trainer:
             self.money += money_reward
     
     def buy_item(self, item_id, quantity=1):
-        """Kauft Items im Shop"""
-        from game_data import SHOP_ITEMS
-        if item_id not in SHOP_ITEMS:
-            return False, "Item existiert nicht!"
+        """Kauft Items im Shop - REPARIERT"""
+        try:
+            from game_data import SHOP_ITEMS
             
-        item = SHOP_ITEMS[item_id]
-        total_cost = item["price"] * quantity
-        
-        if self.money < total_cost:
-            return False, f"Nicht genug Geld! Benötigt: {total_cost}₽"
+            if item_id not in SHOP_ITEMS:
+                return False, "Item existiert nicht!"
+                
+            item = SHOP_ITEMS[item_id]
+            total_cost = item["price"] * quantity
             
-        # Prüfe Inventar-Limits
-        current_amount = self.inventory.get(item_id, 0)
-        if item["category"] == "balls" and current_amount + quantity > GAME_CONFIG["max_pokeballs"]:
-            return False, f"Inventar voll! Maximum: {GAME_CONFIG['max_pokeballs']}"
-        elif item["category"] == "healing" and current_amount + quantity > GAME_CONFIG["max_potions"]:
-            return False, f"Inventar voll! Maximum: {GAME_CONFIG['max_potions']}"
+            # Prüfe ob genug Geld vorhanden
+            if self.money < total_cost:
+                return False, f"Nicht genug Geld! Benötigt: {total_cost}₽, verfügbar: {self.money}₽"
+                
+            # Prüfe Inventar-Limits
+            current_amount = self.inventory.get(item_id, 0)
             
-        # Kauf durchführen
-        self.money -= total_cost
-        self.inventory[item_id] = current_amount + quantity
-        
-        # Update Pokebälle separat für Kompatibilität
-        if item_id == "pokeball":
-            self.pokeballs = self.inventory["pokeball"]
+            if item["category"] == "balls":
+                # Prüfe Pokeball-Limit
+                total_balls_after = self.get_total_pokeballs() + quantity
+                if total_balls_after > GAME_CONFIG["max_pokeballs"]:
+                    return False, f"Pokeball-Inventar voll! Maximum: {GAME_CONFIG['max_pokeballs']}, derzeit: {self.get_total_pokeballs()}"
+            elif item["category"] == "healing":
+                # Prüfe Heilungs-Item Limit
+                if current_amount + quantity > GAME_CONFIG["max_potions"]:
+                    return False, f"Heilungs-Inventar voll! Maximum: {GAME_CONFIG['max_potions']} pro Item-Typ"
+                    
+            # Kauf durchführen
+            self.money -= total_cost
+            self.inventory[item_id] = current_amount + quantity
             
-        return True, f"{quantity}x {item['name']} gekauft!"
+            # Update Pokebälle separat für Kompatibilität
+            if item_id == "pokeball":
+                self.pokeballs = self.inventory["pokeball"]
+                
+            return True, f"✅ {quantity}x {item['name']} gekauft für {total_cost}₽!\n💰 Verbleibendes Geld: {self.money}₽"
+            
+        except Exception as e:
+            return False, f"Fehler beim Kauf: {str(e)}"
     
     def use_item(self, item_id, target_pokemon=None):
         """Verwendet ein Item aus dem Inventar"""
-        if item_id not in self.inventory or self.inventory[item_id] <= 0:
-            return False, "Item nicht verfügbar!"
+        try:
+            if item_id not in self.inventory or self.inventory[item_id] <= 0:
+                return False, "Item nicht verfügbar!"
+                
+            from game_data import SHOP_ITEMS
             
-        from game_data import SHOP_ITEMS
-        item = SHOP_ITEMS[item_id]
-        
-        if item["category"] == "healing" and not target_pokemon:
-            return False, "Ziel-Pokemon benötigt!"
+            if item_id not in SHOP_ITEMS:
+                return False, "Unbekanntes Item!"
+                
+            item = SHOP_ITEMS[item_id]
             
-        # Item verwenden
-        self.inventory[item_id] -= 1
-        
-        if item_id == "trank":
-            target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 20)
-            return True, f"{target_pokemon.name} wurde um 20 HP geheilt!"
-        elif item_id == "supertrank":
-            target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 50)
-            return True, f"{target_pokemon.name} wurde um 50 HP geheilt!"
-        elif item_id == "hypertrank":
-            target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 200)
-            return True, f"{target_pokemon.name} wurde um 200 HP geheilt!"
-        elif item_id == "beleber":
-            if target_pokemon.is_alive():
-                return False, f"{target_pokemon.name} ist nicht besiegt!"
-            target_pokemon.current_hp = target_pokemon.max_hp // 2
-            return True, f"{target_pokemon.name} wurde wiederbelebt!"
-        elif item_id == "vitalkraut":
-            target_pokemon.status = "Normal"
-            return True, f"{target_pokemon.name} wurde von allen Statusproblemen befreit!"
+            if item["category"] == "healing" and not target_pokemon:
+                return False, "Ziel-Pokemon benötigt!"
+                
+            # Prüfe ob Item anwendbar ist
+            if target_pokemon:
+                if item_id == "beleber" and target_pokemon.is_alive():
+                    return False, f"{target_pokemon.name} ist nicht besiegt!"
+                elif item_id in ["trank", "supertrank", "hypertrank"] and target_pokemon.current_hp >= target_pokemon.max_hp:
+                    return False, f"{target_pokemon.name} hat bereits volle HP!"
+                elif item_id == "vitalkraut" and target_pokemon.status == "Normal":
+                    return False, f"{target_pokemon.name} hat keine Statusprobleme!"
             
-        return False, "Item konnte nicht verwendet werden!"
+            # Item verwenden
+            self.inventory[item_id] -= 1
+            
+            if item_id == "trank":
+                old_hp = target_pokemon.current_hp
+                target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 20)
+                healed = target_pokemon.current_hp - old_hp
+                return True, f"✨ {target_pokemon.name} wurde um {healed} HP geheilt!"
+                
+            elif item_id == "supertrank":
+                old_hp = target_pokemon.current_hp
+                target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 50)
+                healed = target_pokemon.current_hp - old_hp
+                return True, f"✨ {target_pokemon.name} wurde um {healed} HP geheilt!"
+                
+            elif item_id == "hypertrank":
+                old_hp = target_pokemon.current_hp
+                target_pokemon.current_hp = min(target_pokemon.max_hp, target_pokemon.current_hp + 200)
+                healed = target_pokemon.current_hp - old_hp
+                return True, f"✨ {target_pokemon.name} wurde um {healed} HP geheilt!"
+                
+            elif item_id == "beleber":
+                target_pokemon.current_hp = target_pokemon.max_hp // 2
+                return True, f"💫 {target_pokemon.name} wurde wiederbelebt mit {target_pokemon.current_hp} HP!"
+                
+            elif item_id == "vitalkraut":
+                old_status = target_pokemon.status
+                target_pokemon.status = "Normal"
+                return True, f"🌿 {target_pokemon.name} wurde von Statuseffekt '{old_status}' geheilt!"
+                
+            return False, "Item konnte nicht verwendet werden!"
+            
+        except Exception as e:
+            return False, f"Fehler bei Item-Verwendung: {str(e)}"
     
     def get_total_pokeballs(self):
         """Gibt Gesamtanzahl aller Pokebälle zurück"""
@@ -185,6 +227,46 @@ class Trainer:
             "team_average_level": round(self.get_team_level_average(), 1)
         }
     
+    def get_inventory_summary(self):
+        """Gibt eine Übersicht des Inventars zurück"""
+        summary = {}
+        from game_data import SHOP_ITEMS
+        
+        for item_id, amount in self.inventory.items():
+            if amount > 0 and item_id in SHOP_ITEMS:
+                item_info = SHOP_ITEMS[item_id]
+                summary[item_id] = {
+                    "name": item_info["name"],
+                    "amount": amount,
+                    "icon": item_info["icon"],
+                    "category": item_info["category"]
+                }
+        
+        return summary
+    
+    def can_afford(self, item_id, quantity=1):
+        """Prüft ob der Trainer sich ein Item leisten kann"""
+        try:
+            from game_data import SHOP_ITEMS
+            if item_id not in SHOP_ITEMS:
+                return False
+            
+            total_cost = SHOP_ITEMS[item_id]["price"] * quantity
+            return self.money >= total_cost
+        except:
+            return False
+    
+    def get_item_count(self, item_id):
+        """Gibt die Anzahl eines bestimmten Items zurück"""
+        return self.inventory.get(item_id, 0)
+    
+    def has_item(self, item_id):
+        """Prüft ob der Trainer ein bestimmtes Item besitzt"""
+        return self.get_item_count(item_id) > 0
+    
     def __str__(self):
         alive_count = len(self.get_alive_pokemon())
-        return f"Trainer {self.name} ({alive_count}/{len(self.pokemon_team)} Pokemon kampfbereit)"
+        return f"Trainer {self.name} ({alive_count}/{len(self.pokemon_team)} Pokemon kampfbereit, {self.money}₽)"
+    
+    def __repr__(self):
+        return f"Trainer(name='{self.name}', pokemon={len(self.pokemon_team)}, money={self.money})"

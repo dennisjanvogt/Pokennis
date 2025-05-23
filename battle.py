@@ -87,21 +87,21 @@ class Battle:
         damage = attack_result["damage"]
         effectiveness = attack_result["effectiveness"]
         
-        message = f"{attacker.name} greift an und verursacht {damage} Schaden!"
+        message = f"💥 {attacker.name} greift an und verursacht {damage} Schaden!"
         
         if effectiveness > 1.0:
-            message += " Das ist sehr effektiv!"
+            message += " ✨ Das ist sehr effektiv!"
         elif effectiveness < 1.0:
-            message += " Das ist nicht sehr effektiv..."
+            message += " 💧 Das ist nicht sehr effektiv..."
         
         if attack_result["critical"]:
-            message += " Kritischer Treffer!"
+            message += " 🎯 Kritischer Treffer!"
             
         battle_over = False
         winner = None
         
         if not defender.is_alive():
-            message += f"\n{defender.name} ist besiegt!"
+            message += f"\n💀 {defender.name} ist besiegt!"
             battle_over = True
             winner = "player" if attacker == self.player.get_first_alive_pokemon() else "opponent"
             
@@ -109,9 +109,9 @@ class Battle:
             if winner == "player":
                 exp_gain = self._calculate_exp_gain(defender)
                 leveled_up = attacker.gain_exp(exp_gain)
-                message += f"\n{attacker.name} erhält {exp_gain} EXP!"
+                message += f"\n⭐ {attacker.name} erhält {exp_gain} EXP!"
                 if leveled_up:
-                    message += f"\n{attacker.name} ist auf Level {attacker.level} gestiegen!"
+                    message += f"\n🎉 {attacker.name} ist auf Level {attacker.level} gestiegen!"
         
         return {
             "success": True,
@@ -123,24 +123,34 @@ class Battle:
         }
     
     def _execute_catch(self, wild_pokemon):
-        """Versucht ein wildes Pokemon zu fangen"""
-        if not self.player.use_pokeball():
+        """Versucht ein wildes Pokemon zu fangen - Verbessert"""
+        # Bestimme welchen Pokeball-Typ verwenden
+        ball_type = self._determine_best_pokeball()
+        
+        if not self.player.use_pokeball(ball_type):
             return {
                 "success": False,
-                "message": "Du hast keine Pokebälle mehr!",
+                "message": "❌ Du hast keine Pokebälle mehr!",
                 "battle_over": False
             }
         
-        # Fangchance berechnen
-        catch_rate = self._calculate_catch_rate(wild_pokemon)
+        # Fangchance berechnen (abhängig vom Ball-Typ)
+        catch_rate = self._calculate_catch_rate(wild_pokemon, ball_type)
         success = random.random() < catch_rate
+        
+        ball_names = {
+            "pokeball": "Pokeball",
+            "superball": "Superball", 
+            "hyperball": "Hyperball"
+        }
+        ball_name = ball_names.get(ball_type, "Pokeball")
         
         if success:
             wild_pokemon.heal()  # Gefangene Pokemon werden geheilt
             if self.player.add_pokemon(wild_pokemon):
-                message = f"Gotcha! {wild_pokemon.name} wurde gefangen und dem Team hinzugefügt!"
+                message = f"🎉 Gotcha! {wild_pokemon.name} wurde mit einem {ball_name} gefangen und dem Team hinzugefügt!"
             else:
-                message = f"Gotcha! {wild_pokemon.name} wurde gefangen, aber das Team ist voll!"
+                message = f"🎉 Gotcha! {wild_pokemon.name} wurde mit einem {ball_name} gefangen, aber das Team ist voll!\n📦 Es wurde zur Pokemon-Box gesendet."
                 
             return {
                 "success": True,
@@ -152,24 +162,57 @@ class Battle:
         else:
             return {
                 "success": False,
-                "message": f"{wild_pokemon.name} ist aus dem Pokeball ausgebrochen!",
+                "message": f"💔 {wild_pokemon.name} ist aus dem {ball_name} ausgebrochen!",
                 "battle_over": False
             }
+    
+    def _determine_best_pokeball(self):
+        """Bestimmt den besten verfügbaren Pokeball"""
+        # Verwende den besten verfügbaren Ball
+        if self.player.has_item("hyperball"):
+            return "hyperball"
+        elif self.player.has_item("superball"):
+            return "superball"
+        elif self.player.has_item("pokeball"):
+            return "pokeball"
+        else:
+            return "pokeball"  # Fallback
     
     def _execute_run(self):
         """Versucht vor dem Kampf zu fliehen"""
         if self.is_wild_battle:
-            return {
-                "success": True,
-                "message": "Du bist erfolgreich geflohen!",
-                "battle_over": True,
-                "winner": "run"
-            }
+            # Erfolgschance beim Fliehen (abhängig von Level-Unterschied)
+            player_pokemon = self.player.get_first_alive_pokemon()
+            if player_pokemon:
+                level_diff = player_pokemon.level - self.opponent_pokemon.level
+                escape_chance = 0.5 + (level_diff * 0.1)  # Base 50% + Level-Bonus
+                escape_chance = max(0.1, min(0.9, escape_chance))  # Zwischen 10% und 90%
+                
+                if random.random() < escape_chance:
+                    return {
+                        "success": True,
+                        "message": "💨 Du bist erfolgreich geflohen!",
+                        "battle_over": True,
+                        "winner": "run"
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "message": "❌ Flucht fehlgeschlagen! Du bist zu langsam!",
+                        "battle_over": False
+                    }
+            else:
+                return {
+                    "success": True,
+                    "message": "💨 Du bist erfolgreich geflohen!",
+                    "battle_over": True,
+                    "winner": "run"
+                }
         else:
             # Gegen Trainer kann man nicht fliehen
             return {
                 "success": False,
-                "message": "Du kannst nicht vor einem Trainer-Kampf fliehen!",
+                "message": "❌ Du kannst nicht vor einem Trainer-Kampf fliehen!",
                 "battle_over": False
             }
     
@@ -181,19 +224,30 @@ class Battle:
         # Einfache KI: Immer angreifen
         attack_result = opponent_pokemon.attack_pokemon(player_pokemon)
         damage = attack_result["damage"]
+        effectiveness = attack_result["effectiveness"]
         
-        message = f"{opponent_pokemon.name} greift {player_pokemon.name} an und verursacht {damage} Schaden!"
+        message = f"💥 {opponent_pokemon.name} greift {player_pokemon.name} an und verursacht {damage} Schaden!"
+        
+        if effectiveness > 1.0:
+            message += " ✨ Das ist sehr effektiv!"
+        elif effectiveness < 1.0:
+            message += " 💧 Das ist nicht sehr effektiv..."
+            
+        if attack_result["critical"]:
+            message += " 🎯 Kritischer Treffer!"
         
         battle_over = False
         winner = None
         
         if not player_pokemon.is_alive():
-            message += f"\n{player_pokemon.name} ist besiegt!"
+            message += f"\n💀 {player_pokemon.name} ist besiegt!"
             # Prüfen ob Spieler andere Pokemon hat
             if not self.player.has_usable_pokemon():
                 battle_over = True
                 winner = "opponent"
-                message += "\nAlle deine Pokemon sind besiegt!"
+                message += "\n😵 Alle deine Pokemon sind besiegt!"
+            else:
+                message += "\n⚠️ Wähle ein neues Pokemon!"
         
         return {
             "success": True,
@@ -202,8 +256,15 @@ class Battle:
             "winner": winner
         }
     
-    def _calculate_catch_rate(self, wild_pokemon):
-        """Berechnet die Fangchance für ein wildes Pokemon"""
+    def _calculate_catch_rate(self, wild_pokemon, ball_type="pokeball"):
+        """Berechnet die Fangchance für ein wildes Pokemon - Verbessert"""
+        # Ball-Multiplikatoren
+        ball_multipliers = {
+            "pokeball": 1.0,
+            "superball": 1.5,
+            "hyperball": 2.0
+        }
+        
         # Basis-Fangchance
         base_rate = 0.3
         
@@ -214,14 +275,32 @@ class Battle:
         # Level-Malus (höhere Level sind schwerer zu fangen)
         level_penalty = (wild_pokemon.level - 1) * 0.02
         
-        catch_rate = base_rate + hp_bonus - level_penalty
-        return max(0.05, min(0.8, catch_rate))  # Zwischen 5% und 80%
+        # Ball-Bonus
+        ball_bonus = ball_multipliers.get(ball_type, 1.0) - 1.0
+        
+        catch_rate = (base_rate + hp_bonus + ball_bonus) - level_penalty
+        return max(0.05, min(0.95, catch_rate))  # Zwischen 5% und 95%
     
     def _calculate_exp_gain(self, defeated_pokemon):
         """Berechnet EXP-Gewinn für besiegtes Pokemon"""
         base_exp = GAME_CONFIG["exp_multiplier"]
         level_bonus = defeated_pokemon.level * 2
-        return base_exp + level_bonus + random.randint(5, 15)
+        random_bonus = random.randint(5, 15)
+        
+        # Bonus für starke Pokemon
+        if defeated_pokemon.level > 10:
+            level_bonus *= 1.5
+        
+        return int(base_exp + level_bonus + random_bonus)
+    
+    def get_battle_summary(self):
+        """Gibt eine Zusammenfassung des Kampfes zurück"""
+        return {
+            "turns": self.turn_count,
+            "is_wild": self.is_wild_battle,
+            "opponent": self.opponent_pokemon.name if self.opponent_pokemon else "Trainer",
+            "log": self.battle_log.copy()
+        }
     
     def log(self, message):
         """Fügt Nachricht zum Kampf-Log hinzu"""
@@ -233,6 +312,36 @@ class Battle:
 
 def create_wild_pokemon(min_level=1, max_level=5):
     """Erstellt ein zufälliges wildes Pokemon"""
-    pokemon_name = random.choice(list(POKEMON_DATA.keys()))
+    # Entferne Starter-Pokemon aus wilden Begegnungen für Balancing
+    available_pokemon = [name for name in POKEMON_DATA.keys() 
+                        if name not in ["Glumanda", "Schiggy", "Bisasam"]]
+    
+    # Falls keine anderen Pokemon verfügbar, verwende alle
+    if not available_pokemon:
+        available_pokemon = list(POKEMON_DATA.keys())
+    
+    pokemon_name = random.choice(available_pokemon)
     level = random.randint(min_level, max_level)
-    return Pokemon(pokemon_name, level)
+    
+    # Erstelle Pokemon
+    wild_pokemon = Pokemon(pokemon_name, level)
+    
+    # Zufällige HP-Variation für wilde Pokemon (macht sie interessanter)
+    hp_variation = random.uniform(0.7, 1.0)
+    wild_pokemon.current_hp = int(wild_pokemon.max_hp * hp_variation)
+    
+    return wild_pokemon
+
+def create_trainer_pokemon(trainer_name, pokemon_list, base_level=5):
+    """Erstellt Pokemon für einen Trainer-NPC"""
+    trainer_pokemon = []
+    for pokemon_name in pokemon_list:
+        if pokemon_name in POKEMON_DATA:
+            # Leichter Level-Variation für Trainer
+            level = base_level + random.randint(-1, 2)
+            level = max(1, level)  # Minimum Level 1
+            
+            pokemon = Pokemon(pokemon_name, level)
+            trainer_pokemon.append(pokemon)
+    
+    return trainer_pokemon

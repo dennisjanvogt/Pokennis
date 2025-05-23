@@ -12,6 +12,7 @@ POKEMON_DATA = {
         "defense": 8,
         "color": "#FF4444",
         "description": "Ein kleines Echsen-Pokemon mit einer Flamme am Schwanz.",
+        "sprite_type": "lizard_fire"
     },
     "Schiggy": {
         "typ": "Wasser",
@@ -20,6 +21,7 @@ POKEMON_DATA = {
         "defense": 12,
         "color": "#4488FF",
         "description": "Ein Schildkröten-Pokemon das Wasserstrahlen schießen kann.",
+        "sprite_type": "turtle_water"
     },
     "Bisasam": {
         "typ": "Pflanze",
@@ -28,6 +30,7 @@ POKEMON_DATA = {
         "defense": 10,
         "color": "#44FF44",
         "description": "Ein Reptil-Pokemon mit einer Zwiebel auf dem Rücken.",
+        "sprite_type": "plant_bulb"
     },
     "Pikachu": {
         "typ": "Elektro",
@@ -36,6 +39,7 @@ POKEMON_DATA = {
         "defense": 6,
         "color": "#FFDD00",
         "description": "Ein Elektro-Maus Pokemon mit roten Wangen.",
+        "sprite_type": "electric_mouse"
     },
     "Rattfratz": {
         "typ": "Normal",
@@ -44,6 +48,7 @@ POKEMON_DATA = {
         "defense": 7,
         "color": "#AA8866",
         "description": "Ein kleines Ratten-Pokemon mit scharfen Zähnen.",
+        "sprite_type": "rat_normal"
     },
     "Taubsi": {
         "typ": "Normal/Flug",
@@ -52,6 +57,7 @@ POKEMON_DATA = {
         "defense": 8,
         "color": "#DDAA77",
         "description": "Ein kleines Vogel-Pokemon das gerne fliegt.",
+        "sprite_type": "bird_flying"
     },
     "Raupy": {
         "typ": "Käfer",
@@ -60,6 +66,7 @@ POKEMON_DATA = {
         "defense": 9,
         "color": "#88DD88",
         "description": "Ein Raupen-Pokemon das sich später entwickelt.",
+        "sprite_type": "caterpillar_bug"
     },
     "Hornliu": {
         "typ": "Käfer/Gift",
@@ -68,6 +75,7 @@ POKEMON_DATA = {
         "defense": 8,
         "color": "#AA44AA",
         "description": "Ein Käfer-Pokemon mit giftigen Stacheln.",
+        "sprite_type": "beetle_poison"
     },
     "Zubat": {
         "typ": "Gift/Flug",
@@ -76,6 +84,7 @@ POKEMON_DATA = {
         "defense": 7,
         "color": "#8844BB",
         "description": "Ein Fledermaus-Pokemon ohne Augen.",
+        "sprite_type": "bat_poison"
     },
     "Digda": {
         "typ": "Boden",
@@ -84,6 +93,7 @@ POKEMON_DATA = {
         "defense": 5,
         "color": "#CC8844",
         "description": "Ein Maulwurf-Pokemon das unter der Erde lebt.",
+        "sprite_type": "mole_ground"
     },
     "Abra": {
         "typ": "Psycho",
@@ -92,6 +102,7 @@ POKEMON_DATA = {
         "defense": 6,
         "color": "#FFCC44",
         "description": "Ein psychisches Pokemon das teleportieren kann.",
+        "sprite_type": "psychic_humanoid"
     },
     "Machollo": {
         "typ": "Kampf",
@@ -100,6 +111,7 @@ POKEMON_DATA = {
         "defense": 11,
         "color": "#CC4444",
         "description": "Ein muskulöses Pokemon das gerne kämpft.",
+        "sprite_type": "fighter_muscle"
     },
 }
 
@@ -139,20 +151,21 @@ GAME_CONFIG = {
 # Verbesserte GUI Farben für bessere Lesbarkeit
 COLORS = {
     "bg_main": "#1a1a2e",  # Dunkelblau
-    "bg_secondary": "#16213e",  # Noch dunkler
-    "bg_card": "#0f3460",  # Kartenhaintergrund
+    "bg_secondary": "#2d2d4a",  # Heller als vorher für besseren Kontrast
+    "bg_card": "#3a3a5c",  # Deutlich heller für bessere Lesbarkeit
     "accent": "#e94560",  # Rot-Pink Akzent
     "accent_light": "#ff6b7a",  # Hellerer Akzent
-    "text_primary": "#ffffff",  # Weißer Haupttext
-    "text_secondary": "#e0e6ed",  # Heller Grautext
+    "text_primary": "#f8f9fa",  # Sehr helles Weiß für bessere Lesbarkeit
+    "text_secondary": "#dee2e6",  # Hellgrau für sekundären Text
     "text_accent": "#ffd700",  # Goldener Akzenttext
-    "success": "#00d2d3",  # Türkis für Erfolg
-    "warning": "#ff9f43",  # Orange für Warnung
-    "danger": "#ff6b7a",  # Rot für Gefahr
-    "info": "#54a0ff",  # Blau für Info
-    "hp_high": "#00d2d3",  # Hohe HP
-    "hp_medium": "#ff9f43",  # Mittlere HP
-    "hp_low": "#ff6b7a",  # Niedrige HP
+    "text_dark": "#212529",  # Dunkler Text für helle Hintergründe
+    "success": "#28a745",  # Grün für Erfolg
+    "warning": "#ffc107",  # Gelb für Warnung
+    "danger": "#dc3545",  # Rot für Gefahr
+    "info": "#17a2b8",  # Blau für Info
+    "hp_high": "#28a745",  # Hohe HP - Grün
+    "hp_medium": "#ffc107",  # Mittlere HP - Gelb
+    "hp_low": "#dc3545",  # Niedrige HP - Rot
     "exp_bar": "#ffd700",  # EXP Balken
     # Map-Farben
     "grass": "#2d5016",  # Dunkles Gras
@@ -232,7 +245,7 @@ FONT_CONFIG = {
     "text_size": 14,
     "small_size": 12,
     "tiny_size": 10,
-    "family": "Segoe UI",  # Bessere Schriftart
+    "family": "Arial",  # Arial ist universeller verfügbar
 }
 
 # Shop-Items

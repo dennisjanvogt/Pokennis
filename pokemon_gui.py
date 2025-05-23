@@ -1,4 +1,4 @@
-# gui.py
+# pokemon_gui.py
 """
 Grafische Benutzeroberfläche für das Pokemon-Spiel
 """
@@ -8,6 +8,7 @@ import random
 from pokemon import Pokemon
 from trainer_class import Trainer
 from battle import Battle, create_wild_pokemon
+from pokemon_sprites import PokemonSprite
 from game_data import (
     STARTER_POKEMON,
     POKEMON_DATA,
@@ -321,7 +322,7 @@ class PokemonGUI:
 
         subtitle = tk.Label(
             title_frame,
-            text="Python Edition - Improved Graphics",
+            text="Python Edition - With Amazing Graphics!",
             font=self.header_font,
             fg=COLORS["text_accent"],
             bg=COLORS["bg_main"],
@@ -329,7 +330,7 @@ class PokemonGUI:
         subtitle.pack(pady=10)
 
         # Info Card
-        info_text = "🗺️ Laufe durch die Welt mit WASD oder Pfeiltasten\n⚔️ Kämpfe gegen wilde Pokemon\n🏥 Besuche das Pokemon-Center\n🎯 Sammle alle Pokemon!"
+        info_text = "🗺️ Laufe durch die Welt mit WASD oder Pfeiltasten\n⚔️ Kämpfe gegen wilde Pokemon\n🏥 Besuche das Pokemon-Center\n🎯 Sammle alle Pokemon!\n🎨 Genieße die neuen Pokemon-Grafiken!"
         info_card = self.create_info_card(title_frame, "Spielfeatures:", info_text)
         info_card.pack(pady=20)
 
@@ -413,7 +414,7 @@ class PokemonGUI:
             )
             card_frame.grid(row=0, column=i, padx=25, pady=15)
 
-            # Pokemon "Sprite" (größerer, schönerer Kreis)
+            # Pokemon "Sprite" mit neuer Grafik-Engine
             canvas = tk.Canvas(
                 card_frame,
                 width=140,
@@ -423,26 +424,8 @@ class PokemonGUI:
             )
             canvas.pack(pady=15)
 
-            # Äußerer Ring
-            canvas.create_oval(
-                10,
-                10,
-                130,
-                130,
-                fill=pokemon_data["color"],
-                outline=COLORS["text_primary"],
-                width=4,
-            )
-            # Innerer Ring für 3D-Effekt
-            canvas.create_oval(
-                20,
-                20,
-                120,
-                120,
-                fill=pokemon_data["color"],
-                outline=COLORS["text_accent"],
-                width=2,
-            )
+            # Neues Pokemon-Sprite zeichnen
+            PokemonSprite.draw_pokemon(canvas, starter_name, 70, 70, 80)
 
             # Pokemon Name
             name_label = tk.Label(
@@ -923,13 +906,13 @@ class PokemonGUI:
             bg=COLORS["bg_card"],
             relief="solid",
             bd=2,
-            width=200,
-            height=250,
+            width=250,
+            height=300,
         )
         wild_frame.grid(row=0, column=0, padx=20)
         wild_frame.pack_propagate(False)
 
-        self.display_compact_pokemon_card(wild_frame, wild_pokemon, "🐾 Wildes Pokemon")
+        self.display_battle_pokemon_card(wild_frame, wild_pokemon, "🐾 Wildes Pokemon")
 
         # VS Label (kompakter)
         vs_frame = tk.Frame(pokemon_frame, bg=COLORS["accent"], relief="solid", bd=2)
@@ -950,14 +933,14 @@ class PokemonGUI:
             bg=COLORS["bg_card"],
             relief="solid",
             bd=2,
-            width=200,
-            height=250,
+            width=250,
+            height=300,
         )
         player_frame.grid(row=0, column=2, padx=20)
         player_frame.pack_propagate(False)
 
         current_pokemon = self.player.get_first_alive_pokemon()
-        self.display_compact_pokemon_card(
+        self.display_battle_pokemon_card(
             player_frame, current_pokemon, "👤 Dein Pokemon"
         )
 
@@ -1016,99 +999,8 @@ class PokemonGUI:
         )
         back_btn.pack(pady=10)
 
-    def display_pokemon_card(self, parent, pokemon, title, is_enemy=False):
-        """Zeigt eine verbesserte Pokemon-Karte an"""
-        # Title
-        title_label = tk.Label(
-            parent,
-            text=title,
-            font=self.header_font,
-            fg=COLORS["text_accent"],
-            bg=COLORS["bg_card"],
-        )
-        title_label.pack(pady=10)
-
-        # Pokemon "Sprite" (größer und schöner)
-        canvas = tk.Canvas(
-            parent, width=160, height=160, bg=COLORS["bg_card"], highlightthickness=0
-        )
-        canvas.pack(pady=15)
-
-        color = POKEMON_DATA[pokemon.name]["color"]
-
-        # Äußerer Ring mit Schatten-Effekt
-        canvas.create_oval(15, 15, 145, 145, fill="gray", width=0)  # Schatten
-        canvas.create_oval(
-            10, 10, 140, 140, fill=color, outline=COLORS["text_primary"], width=4
-        )
-        # Innerer Glanz
-        canvas.create_oval(
-            25, 25, 125, 125, fill=color, outline=COLORS["text_accent"], width=2
-        )
-
-        # Pokemon Info Frame
-        info_frame = tk.Frame(parent, bg=COLORS["bg_secondary"], relief="solid", bd=1)
-        info_frame.pack(pady=10, padx=15, fill="x")
-
-        # Name und Level
-        name_text = f"{pokemon.name} (Lv.{pokemon.level})"
-        tk.Label(
-            info_frame,
-            text=name_text,
-            font=self.header_font,
-            fg=COLORS["text_accent"],
-            bg=COLORS["bg_secondary"],
-        ).pack(pady=5)
-
-        # Typ mit farbigem Hintergrund
-        type_frame = tk.Frame(info_frame, bg=color, relief="solid", bd=1)
-        type_frame.pack(pady=5)
-        tk.Label(
-            type_frame,
-            text=f"Typ: {pokemon.typ}",
-            font=self.small_font,
-            fg=COLORS["text_primary"],
-            bg=color,
-        ).pack(padx=10, pady=2)
-
-        # HP Bar mit Farbe basierend auf HP-Prozent
-        hp_frame = tk.Frame(info_frame, bg=COLORS["bg_secondary"])
-        hp_frame.pack(pady=10, fill="x")
-
-        hp_percent = pokemon.get_hp_percentage()
-        hp_color = (
-            COLORS["hp_high"]
-            if hp_percent > 60
-            else COLORS["hp_medium"] if hp_percent > 30 else COLORS["hp_low"]
-        )
-
-        tk.Label(
-            hp_frame,
-            text=f"❤️ HP: {pokemon.current_hp}/{pokemon.max_hp}",
-            font=self.text_font,
-            fg=COLORS["text_primary"],
-            bg=COLORS["bg_secondary"],
-        ).pack()
-
-        # HP Progress Bar (custom)
-        hp_bar_frame = tk.Frame(hp_frame, bg="black", height=8, relief="sunken", bd=1)
-        hp_bar_frame.pack(fill="x", padx=10, pady=5)
-
-        hp_fill = tk.Frame(hp_bar_frame, bg=hp_color, height=6)
-        hp_fill.place(relwidth=hp_percent / 100, relheight=1)
-
-        # Stats
-        stats_text = f"⚔️ ATK: {pokemon.attack} | 🛡️ DEF: {pokemon.defense}"
-        tk.Label(
-            info_frame,
-            text=stats_text,
-            font=self.small_font,
-            fg=COLORS["text_secondary"],
-            bg=COLORS["bg_secondary"],
-        ).pack(pady=5)
-
-    def display_compact_pokemon_card(self, parent, pokemon, title):
-        """Zeigt eine kompakte Pokemon-Karte für den Kampfbildschirm"""
+    def display_battle_pokemon_card(self, parent, pokemon, title):
+        """Zeigt eine Pokemon-Karte im Kampfbildschirm mit neuen Sprites"""
         # Title
         title_label = tk.Label(
             parent,
@@ -1119,21 +1011,14 @@ class PokemonGUI:
         )
         title_label.pack(pady=5)
 
-        # Pokemon "Sprite" (kleinerer Kreis)
+        # Pokemon "Sprite" mit neuer Grafik-Engine
         canvas = tk.Canvas(
-            parent, width=80, height=80, bg=COLORS["bg_card"], highlightthickness=0
+            parent, width=140, height=140, bg=COLORS["bg_card"], highlightthickness=0
         )
         canvas.pack(pady=5)
 
-        color = POKEMON_DATA[pokemon.name]["color"]
-        hp_percent = pokemon.get_hp_percentage()
-        ring_color = (
-            COLORS["hp_high"]
-            if hp_percent > 60
-            else COLORS["hp_medium"] if hp_percent > 30 else COLORS["hp_low"]
-        )
-
-        canvas.create_oval(10, 10, 70, 70, fill=color, outline=ring_color, width=3)
+        # Neues Pokemon-Sprite zeichnen
+        PokemonSprite.draw_pokemon(canvas, pokemon.name, 70, 70, 100)
 
         # Pokemon Info (kompakt)
         name_text = f"{pokemon.name}\n(Lv.{pokemon.level})"
@@ -1155,12 +1040,19 @@ class PokemonGUI:
         ).pack()
 
         # HP Info
+        hp_percent = pokemon.get_hp_percentage()
+        hp_color = (
+            COLORS["hp_high"]
+            if hp_percent > 60
+            else COLORS["hp_medium"] if hp_percent > 30 else COLORS["hp_low"]
+        )
+
         hp_text = f"❤️ {pokemon.current_hp}/{pokemon.max_hp}"
         tk.Label(
             parent,
             text=hp_text,
             font=self.small_font,
-            fg=ring_color,
+            fg=hp_color,
             bg=COLORS["bg_card"],
         ).pack(pady=2)
 
@@ -1168,7 +1060,7 @@ class PokemonGUI:
         hp_bar_frame = tk.Frame(parent, bg="black", height=4, relief="sunken", bd=1)
         hp_bar_frame.pack(fill="x", padx=10, pady=2)
 
-        hp_fill = tk.Frame(hp_bar_frame, bg=ring_color, height=2)
+        hp_fill = tk.Frame(hp_bar_frame, bg=hp_color, height=2)
         hp_fill.place(relwidth=hp_percent / 100, relheight=1)
 
         # Stats (kompakt)
@@ -1247,7 +1139,7 @@ class PokemonGUI:
 
         balls = {k: v for k, v in SHOP_ITEMS.items() if v["category"] == "balls"}
         for item_id, item in balls.items():
-            self.create_shop_item(balls_frame, item_id, item)
+            self.create_shop_item(balls_frame, item_id, item, shop_window)
 
         # Heilung Kategorie
         healing_frame = tk.LabelFrame(
@@ -1263,7 +1155,7 @@ class PokemonGUI:
 
         healing = {k: v for k, v in SHOP_ITEMS.items() if v["category"] == "healing"}
         for item_id, item in healing.items():
-            self.create_shop_item(healing_frame, item_id, item)
+            self.create_shop_item(healing_frame, item_id, item, shop_window)
 
         # Inventar-Anzeige
         inventory_frame = tk.LabelFrame(
@@ -1292,7 +1184,7 @@ class PokemonGUI:
         )
         close_btn.pack()
 
-    def create_shop_item(self, parent, item_id, item):
+    def create_shop_item(self, parent, item_id, item, shop_window):
         """Erstellt ein Shop-Item Widget"""
         item_frame = tk.Frame(parent, bg=COLORS["bg_secondary"], relief="solid", bd=1)
         item_frame.pack(fill="x", padx=10, pady=5)
@@ -1349,7 +1241,7 @@ class PokemonGUI:
         buy1_btn = self.create_styled_button(
             buy_frame,
             "Kaufe 1x",
-            lambda: self.buy_item_action(item_id, 1),
+            lambda: self.buy_item_action(item_id, 1, shop_window),
             COLORS["info"],
             8,
         )
@@ -1360,24 +1252,21 @@ class PokemonGUI:
             buy5_btn = self.create_styled_button(
                 buy_frame,
                 "Kaufe 5x",
-                lambda: self.buy_item_action(item_id, 5),
+                lambda: self.buy_item_action(item_id, 5, shop_window),
                 COLORS["success"],
                 8,
             )
             buy5_btn.pack(pady=2)
 
-    def buy_item_action(self, item_id, quantity):
+    def buy_item_action(self, item_id, quantity, shop_window):
         """Führt Kauf-Aktion aus"""
         success, message = self.player.buy_item(item_id, quantity)
 
         if success:
             messagebox.showinfo("✅ Kauf erfolgreich!", message)
-            # Shop-Fenster finden und neu laden
-            for widget in self.root.winfo_children():
-                if isinstance(widget, tk.Toplevel) and "Pokemarkt" in widget.title():
-                    widget.destroy()
-                    self.show_shop()
-                    break
+            # Shop-Fenster neu laden
+            shop_window.destroy()
+            self.show_shop()
         else:
             messagebox.showerror("❌ Kauf fehlgeschlagen", message)
 
@@ -1518,7 +1407,7 @@ class PokemonGUI:
         # Team info
         team_info = tk.Label(
             header_frame,
-            text=f"📊 Team-Größe: {len(self.player.pokemon_team)}/{GAME_CONFIG['max_team_size']} | 🥎 Pokebälle: {self.player.pokeballs}",
+            text=f"📊 Team-Größe: {len(self.player.pokemon_team)}/{GAME_CONFIG['max_team_size']} | 🥎 Pokebälle: {self.player.get_total_pokeballs()}",
             font=self.text_font,
             fg=COLORS["text_primary"],
             bg=COLORS["bg_card"],
@@ -1556,23 +1445,14 @@ class PokemonGUI:
         left_frame = tk.Frame(content_frame, bg=COLORS["bg_card"])
         left_frame.pack(side="left")
 
-        # Pokemon sprite
+        # Pokemon sprite mit neuer Grafik-Engine
         canvas = tk.Canvas(
             left_frame, width=80, height=80, bg=COLORS["bg_card"], highlightthickness=0
         )
         canvas.pack(side="left", padx=(0, 15))
 
-        color = POKEMON_DATA[pokemon.name]["color"]
-        hp_percent = pokemon.get_hp_percentage()
-
-        # Ring-Farbe basierend auf HP
-        ring_color = (
-            COLORS["hp_high"]
-            if hp_percent > 60
-            else COLORS["hp_medium"] if hp_percent > 30 else COLORS["hp_low"]
-        )
-
-        canvas.create_oval(5, 5, 75, 75, fill=color, outline=ring_color, width=3)
+        # Neues Pokemon-Sprite zeichnen
+        PokemonSprite.draw_pokemon(canvas, pokemon.name, 40, 40, 60)
 
         # Right side - Pokemon details
         details_frame = tk.Frame(content_frame, bg=COLORS["bg_card"])
@@ -1601,6 +1481,13 @@ class PokemonGUI:
         # HP with colored bar
         hp_frame = tk.Frame(details_frame, bg=COLORS["bg_card"])
         hp_frame.pack(anchor="w", fill="x", pady=5)
+
+        hp_percent = pokemon.get_hp_percentage()
+        ring_color = (
+            COLORS["hp_high"]
+            if hp_percent > 60
+            else COLORS["hp_medium"] if hp_percent > 30 else COLORS["hp_low"]
+        )
 
         tk.Label(
             hp_frame,
@@ -1655,7 +1542,7 @@ class PokemonGUI:
             f"💫 Willkommen im Pokemon-Center!\n\n"
             f"✨ Alle deine Pokemon wurden vollständig geheilt!\n"
             f"🥎 Du hast {GAME_CONFIG['pokeball_refill']} Pokebälle erhalten!\n\n"
-            f"🎒 Pokebälle gesamt: {self.player.pokeballs}",
+            f"🎒 Pokebälle gesamt: {self.player.get_total_pokeballs()}",
         )
 
     def show_stats(self):
